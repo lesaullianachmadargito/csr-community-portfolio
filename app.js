@@ -1,0 +1,19 @@
+const q=s=>document.querySelector(s);
+const ids=['beranda','program','galeri','pendekatan','bukti'];
+function route(){let id=location.hash.slice(1);if(!ids.includes(id))id='beranda';document.querySelectorAll('.view').forEach(s=>s.hidden=s.id!==id);document.querySelectorAll('nav a').forEach(a=>{if(a.hash==='#'+id)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});document.body.dataset.page=id;window.scrollTo(0,0)}
+addEventListener('hashchange',route);route();
+let images=[],shown=[],index=0,opener;
+const dialog=q('#lightbox');
+function paint(){const p=shown[index];q('#large').src=p.src;q('#large').alt=p.title;q('#caption-title').textContent=p.title;q('#caption-text').textContent=p.caption;q('#counter').textContent=`${index+1} / ${shown.length} · ${p.group}`}
+function render(group='Semua'){shown=images.filter(x=>group==='Semua'||x.group===group);q('#gallery').replaceChildren(...shown.map((p,i)=>{const b=document.createElement('button');b.className='tile'+(/yig|laporan|desain/.test(p.src)?' document':'');const im=document.createElement('img');im.src=p.src;im.alt=p.title;im.loading='lazy';const small=document.createElement('small');small.textContent=p.group+' ↗';const strong=document.createElement('strong');strong.textContent=p.title;b.append(im,small,strong);b.addEventListener('click',()=>{index=i;opener=b;paint();dialog.showModal()});return b}))}
+fetch('assets/gallery.json').then(r=>{if(!r.ok)throw Error();return r.json()}).then(data=>{images=data;render()}).catch(()=>q('#gallery').textContent='Galeri belum termuat. Silakan muat ulang halaman atau buka portofolio PDF di bagian Bukti.');
+document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('selected',x===b));render(b.dataset.filter)}));
+q('#close').onclick=()=>dialog.close();dialog.addEventListener('close',()=>opener?.focus());q('#prev').onclick=()=>{index=(index-1+shown.length)%shown.length;paint()};q('#next').onclick=()=>{index=(index+1)%shown.length;paint()};dialog.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'){e.preventDefault();q('#prev').click()}if(e.key==='ArrowRight'){e.preventDefault();q('#next').click()}});
+const steps=[
+['Dengarkan & petakan','Catat kebutuhan yang disampaikan warga, pihak yang terdampak, sumber informasi dan kondisi awal. Periksa perbedaan keterangan sebelum menyimpulkan masalah.','Keluaran usulan: ringkasan kebutuhan, daftar pemangku kepentingan dan pertanyaan yang masih terbuka.'],
+['Rencanakan bersama','Diskusikan tujuan, kegiatan, pembagian tanggung jawab, biaya dan jadwal dengan tim serta mitra. Pastikan sasaran realistis dan dapat ditinjau.','Keluaran usulan: rencana kerja, PIC, jadwal serta indikator yang disepakati.'],
+['Catat pelaksanaan','Dokumentasikan tanggal, lokasi, materi, cakupan kegiatan dan kendala. Mintalah persetujuan sebelum menggunakan foto atau informasi pribadi warga.','Keluaran usulan: catatan kegiatan dan bukti pelaksanaan yang tersusun.'],
+['Tinjau penggunaan','Periksa apakah fasilitas digunakan, siapa operatornya, bagaimana biaya perawatan dipenuhi, dan kendala yang muncul setelah penyerahan.','Keluaran usulan: catatan pemanfaatan, kebutuhan perbaikan dan tindak lanjut dengan mitra.'],
+['Laporkan & tindak lanjuti','Bandingkan rencana dengan pelaksanaan. Pisahkan keluaran, hasil terukur dan informasi yang belum tersedia. Periksa bukti sebelum menutup tindak lanjut.','Keluaran usulan: ringkasan progres, isu, PIC, tenggat dan bukti penyelesaian.']];
+function step(i){const s=steps[i];q('#method').innerHTML=`<span class="number">0${i+1}</span><h2>${s[0]}</h2><p>${s[1]}</p><small>${s[2]}</small>`;document.querySelectorAll('[data-step]').forEach(b=>b.classList.toggle('selected',Number(b.dataset.step)===i))}
+document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>step(Number(b.dataset.step)));step(0);
